@@ -1,25 +1,18 @@
-/**
- * Created by saibi on 3/25/14.
- */
+package com.example.slides_controller.app;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 
-/**
- * Created by saibi on 3/25/14.
- */
 public class Message implements Serializable {
     private int operation;
     private ArrayList<Integer> line_x;
     private ArrayList<Integer> line_y;
+    private byte[] image;
+
     public Message() {
         line_x = new ArrayList<Integer>();
         line_y = new ArrayList<Integer>();
-        operation = -1;
-    }
-
-    public void setOperation(int operation) {
-        this.operation = operation;
+        operation = 0;
     }
 
     public void addPoint(int x, int y) {
@@ -31,12 +24,23 @@ public class Message implements Serializable {
         return operation;
     }
 
-    public ArrayList<Integer> getLine_x(){
+    public void setOperation(int operation) {
+        this.operation = operation;
+    }
+
+    public ArrayList<Integer> getLine_x() {
         return line_x;
     }
 
-    public ArrayList<Integer> getLine_y(){
+    public ArrayList<Integer> getLine_y() {
         return line_y;
     }
 
+    public byte[] getImageByteArray() {
+        return image;
+    }
+
+    public void setImageByteArray(byte[] image) {
+        this.image = image.clone();
+    }
 }

@@ -1,3 +1,4 @@
+package com.example.slides_controller.app;
 
 /**
  * Created by saibi on 3/25/14.

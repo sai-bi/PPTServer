@@ -1,3 +1,5 @@
+package com.example.slides_controller.app;
+
 import java.io.Serializable;
 
 /**
