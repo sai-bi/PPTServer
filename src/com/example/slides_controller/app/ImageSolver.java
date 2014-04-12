@@ -22,10 +22,11 @@ public class ImageSolver {
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
 
+
         return resizedImage;
     }
 
-    public static byte[] imgbyte(BufferedImage img) throws IOException {
+    public static byte[] getimgbyte(BufferedImage img) throws IOException {
         ByteArrayOutputStream imageStream = new ByteArrayOutputStream();
         ImageIO.write(img, "jpg", imageStream);
         byte[] data = imageStream.toByteArray();

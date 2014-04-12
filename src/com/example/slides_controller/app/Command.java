@@ -15,6 +15,6 @@ public class Command {
     static public final int PEN = 8;
     static public final int LASER = 9;
     static public final int HIGHLIGHT = 10;
-
     static public final int IMAGE = 11;
+    static public final int LINE = 12;
 }
