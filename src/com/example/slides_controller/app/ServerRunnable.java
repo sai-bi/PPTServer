@@ -69,7 +69,6 @@ public class ServerRunnable {
                 int y = (int) (line_y.get(i) / height * screen_height);
 
                 if (i == 0) {
-
                     robot.mouseMove(x, y);
                     robot.setAutoDelay(50);
                     robot.mousePress(InputEvent.BUTTON1_MASK);
@@ -95,62 +94,12 @@ public class ServerRunnable {
         object_output_list.remove(clientid);
     }
 
-    /**
-     * Send message to all clients.
-     *
-     * @param message Message object to be sent
-     */
-    private synchronized void tellAllClients(Message message, int flag, int command, int neglect) {
-
-        message.setOperation(command);
-        switch (flag) {
-            case SCREEN_SHOT:
-
-                try {
-                    byte[] screen_byte = screenshot();
-                    message.setImageByteArray(screen_byte);
-                } catch (Exception e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                    return;
-                }
-                break;
-            case FORWARD:
-                break;
-            default:
-                break;
-
-
-        }
-        for (int x : object_output_list.keySet()) {
-
-            if (x == neglect)
-                continue;
-            try {
-
-                ObjectOutputStream out = object_output_list.get(x);
-                out.writeObject(message);
-                out.flush();
-                System.out.println("send to client!");
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-
-            }
-
-
-        }
-
-    }
-
-    private byte[] screenshot() throws IOException {
-
+    private byte[] get_screenshot() throws IOException {
         BufferedImage buff = robot.createScreenCapture(new Rectangle(0, 0, screen_width, screen_height));
         BufferedImage scale = ImageSolver.resizeImageWithHint(buff, 640, 640 * screen_height / screen_width, BufferedImage.TYPE_INT_RGB);
         byte[] imgbyte = ImageSolver.getimgbyte(scale);
         buff = null;
         scale = null;
-
         return imgbyte;
     }
 
@@ -166,54 +115,62 @@ public class ServerRunnable {
         }
 
         private void handleMessage(Message message) throws InterruptedException {
-            Message out_message = new Message();
             switch (message.getOperation()) {
                 case Command.START_DISPLAY:
-
-
-                    tellAllClients(out_message, SCREEN_SHOT, Command.IMAGE, 0);
-                    System.out.println("start display!");
+                    robot.keyPress(KeyEvent.VK_F5);
+                    robot.keyRelease(KeyEvent.VK_F5);
+                    tellAllClients(message, Command.IMAGE, -1);
                     break;
                 case Command.END_DISPLAY:
-
+                    robot.keyPress(KeyEvent.VK_ESCAPE);
+                    robot.keyRelease(KeyEvent.VK_ESCAPE);
+                    tellAllClients(message, Command.IMAGE, -1);
                     break;
                 case Command.BLACK_SCREEN:
+                    robot.keyPress(KeyEvent.VK_B);
+                    robot.keyRelease(KeyEvent.VK_B);
+                    tellAllClients(message, Command.IMAGE, -1);
                     break;
                 case Command.WHITE_SCREEN:
+                    robot.keyPress(KeyEvent.VK_W);
+                    robot.keyRelease(KeyEvent.VK_W);
+                    tellAllClients(message, Command.IMAGE, -1);
                     break;
                 case Command.NEXT_SLIDE:
-                    try {
-                        robot.keyPress(KeyEvent.VK_DOWN);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    Thread.sleep(500);
-                    tellAllClients(out_message, SCREEN_SHOT, Command.IMAGE, 0);
+                    robot.keyPress(KeyEvent.VK_DOWN);
+                    robot.keyRelease(KeyEvent.VK_DOWN);
+                    tellAllClients(message, Command.IMAGE, -1);
                     break;
                 case Command.PREVIOUS_SLIDE:
-                    try {
-                        robot.keyPress(KeyEvent.VK_UP);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    Thread.sleep(500);
-                    tellAllClients(out_message, SCREEN_SHOT, Command.IMAGE, 0);
+                    robot.keyPress(KeyEvent.VK_UP);
+                    robot.keyRelease(KeyEvent.VK_UP);
+                    tellAllClients(message, Command.IMAGE, -1);
                     break;
                 case Command.LASER:
+                    // ignore temporarily
                     break;
                 case Command.HIGHLIGHT:
+                    // ignore temporarily
                     break;
                 case Command.PEN:
-
-                    tellAllClients(message, FORWARD, message.getOperation(), this.id);
+                    robot.keyPress(KeyEvent.VK_WINDOWS);
+                    robot.keyPress(KeyEvent.VK_P);
+                    robot.keyRelease(KeyEvent.VK_P);
+                    robot.keyRelease(KeyEvent.VK_WINDOWS);
                     break;
                 case Command.LINE:
                     drawLines(message.getLine_x(), message.getLine_y(), message.getScreenWidth(), message.getScreenHeight());
-                    //tellAllClients(message,FORWARD,message.getOperation(),this.id);
+                    tellAllClients(message, Command.LINE, id);
                     break;
                 case Command.EXIT_BLACK_SCREEN:
+                    robot.keyPress(KeyEvent.VK_B);
+                    robot.keyRelease(KeyEvent.VK_B);
+                    tellAllClients(message, Command.IMAGE, -1);
                     break;
                 case Command.EXIT_WHITE_SCREEN:
+                    robot.keyPress(KeyEvent.VK_W);
+                    robot.keyRelease(KeyEvent.VK_W);
+                    tellAllClients(message, Command.IMAGE, -1);
                     break;
                 default:
                     break;
@@ -226,23 +183,53 @@ public class ServerRunnable {
             // TODO Auto-generated method stub
             Message input_message;
             try {
-
                 ObjectInputStream objs = new ObjectInputStream(client.getInputStream());
-                // object_output = new ObjectOutputStream(client.getOutputStream());
                 while (true) {
                     if (client == null)
                         break;
-
                     input_message = (Message) objs.readObject();
                     System.out.println("Got a message...");
                     System.out.println(input_message.getOperation());
-
                     handleMessage(input_message);
-
                 }
             } catch (Exception e) {
                 e.printStackTrace();
                 System.out.println("Error in handling client");
+            }
+        }
+
+
+        private synchronized void tellAllClients(Message input_message, int message_type, int neglect_client_id) {
+            Message message = new Message();
+            message.setScreenHeight(input_message.getScreenHeight());
+            message.setScreenWidth(input_message.getScreenWidth());
+            if (message_type == Command.IMAGE) {
+                try {
+                    Thread.sleep(500);
+                    byte[] screen_byte = get_screenshot();
+                    message.setImageByteArray(screen_byte);
+                    message.setOperation(Command.IMAGE);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return;
+                }
+            } else if (message_type == Command.LINE) {
+                message.setLine_x(input_message.getLine_x());
+                message.setLine_y(input_message.getLine_y());
+                message.setOperation(Command.LINE);
+            }
+            for (int x : object_output_list.keySet()) {
+                if (x == neglect_client_id)
+                    continue;
+                try {
+                    ObjectOutputStream out = object_output_list.get(x);
+                    out.writeObject(message);
+                    out.flush();
+                    System.out.println("send to client!");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
 
